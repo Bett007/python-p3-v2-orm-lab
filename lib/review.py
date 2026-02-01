@@ -7,10 +7,14 @@ class Review:
     all = {}
 
     def __init__(self, year, summary, employee, id=None):
+        """
+        employee can be either:
+        - an Employee instance, or
+        - an integer employee_id (e.g. employee.id)
+        """
         self.id = id
         self.year = year
         self.summary = summary
-        # employee is an Employee instance
         self.employee = employee
 
     def __repr__(self):
@@ -42,7 +46,7 @@ class Review:
             raise ValueError("summary must be a non-empty string")
         self._summary = value
 
-        @property
+    @property
     def employee(self):
         return self._employee
 
@@ -58,14 +62,18 @@ class Review:
         # If we were given an Employee instance
         if isinstance(value, Employee):
             if value.id is None:
-                raise ValueError("employee must be persisted before assigning to review")
+                raise ValueError(
+                    "employee must be persisted before assigning to review"
+                )
             self._employee = value
 
         # If we were given an integer ID, look up the Employee
         elif isinstance(value, int):
             employee = Employee.find_by_id(value)
             if not employee:
-                raise ValueError("employee must be persisted before assigning to review")
+                raise ValueError(
+                    "employee must be persisted before assigning to review"
+                )
             self._employee = employee
 
         else:
@@ -78,7 +86,6 @@ class Review:
 
     @employee_id.setter
     def employee_id(self, value):
-        # Accept an integer id and map to an Employee
         from employee import Employee
 
         if not isinstance(value, int):
