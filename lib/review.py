@@ -3,19 +3,19 @@ from __init__ import CONN, CURSOR
 
 
 class Review:
-    # Cache of Review instances by id
+    # cache of Review instances by id
     all = {}
 
     def __init__(self, year, summary, employee, id=None):
         """
-        employee can be either:
+        `employee` can be:
         - an Employee instance, or
-        - an integer employee_id (e.g. employee.id)
+        - an integer employee_id
         """
         self.id = id
         self.year = year
         self.summary = summary
-        self.employee = employee
+        self.employee = employee  # goes through the property setter
 
     def __repr__(self):
         return (
@@ -23,17 +23,19 @@ class Review:
             f"Employee {self.employee.id}>"
         )
 
-    # --------------------
-    # Property validations
-    # --------------------
+    # -------------------
+    # Property validation
+    # -------------------
     @property
     def year(self):
         return self._year
 
     @year.setter
     def year(self, value):
-        if not isinstance(value, int) or value < 2000:
-            raise ValueError("year must be an integer >= 2000")
+        if not isinstance(value, int):
+            raise ValueError("year must be an integer")
+        if value < 2000:
+            raise ValueError("year must be >= 2000")
         self._year = value
 
     @property
@@ -54,20 +56,17 @@ class Review:
     def employee(self, value):
         """
         Accept either:
-        - an Employee instance (already loaded), or
-        - an integer employee_id (e.g. employee.id)
+        - an Employee instance, or
+        - an integer employee_id
         """
         from employee import Employee
 
-        # If we were given an Employee instance
         if isinstance(value, Employee):
             if value.id is None:
                 raise ValueError(
                     "employee must be persisted before assigning to review"
                 )
             self._employee = value
-
-        # If we were given an integer ID, look up the Employee
         elif isinstance(value, int):
             employee = Employee.find_by_id(value)
             if not employee:
@@ -75,13 +74,11 @@ class Review:
                     "employee must be persisted before assigning to review"
                 )
             self._employee = employee
-
         else:
             raise ValueError("employee must be an Employee instance")
 
     @property
     def employee_id(self):
-        # Expose FK id for convenience
         return self.employee.id if hasattr(self, "_employee") and self._employee else None
 
     @employee_id.setter
@@ -95,9 +92,9 @@ class Review:
             raise ValueError("employee_id must refer to a persisted Employee")
         self.employee = employee
 
-    # --------------------
+    # -------------------
     # Table management
-    # --------------------
+    # -------------------
     @classmethod
     def create_table(cls):
         sql = """
@@ -118,9 +115,9 @@ class Review:
         CURSOR.execute(sql)
         CONN.commit()
 
-    # --------------------
+    # -------------------
     # ORM methods
-    # --------------------
+    # -------------------
     def save(self):
         """
         Persist this Review instance to the database.
@@ -146,9 +143,8 @@ class Review:
         """
         Create a new Review instance and save it.
 
-        The tests call this like:
-            Review.create(2022, "Some summary", employee1.id)
-        so the third argument is an employee_id, not an Employee instance.
+        Tests call:
+            Review.create(2023, "Excellent Python skills!", employee.id)
         """
         from employee import Employee
 
@@ -156,6 +152,7 @@ class Review:
         if not employee:
             raise ValueError("employee_id must refer to a persisted Employee")
 
+        # __init__ will run the validations on year and summary
         review = cls(year, summary, employee)
         review.save()
         return review
